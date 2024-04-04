@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:letsgohome/controller/login_controller.dart';
 import 'package:letsgohome/controller/registration_controller.dart';
 import 'package:letsgohome/screens/homepage.dart';
-import 'package:get/get.dart';
+import 'package:letsgohome/screens/register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key});
@@ -14,12 +14,11 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  LoginController loginController = Get.put(LoginController());
-  final RegistrationController registerController = Get.put(RegistrationController());
+  final LoginController loginController = Get.put(LoginController());
+  final RegistrationController registerController =
+  Get.put(RegistrationController());
   bool _isPasswordVisible = false;
-  var is_login=false.obs;
-
-
+  var is_login = false.obs;
 
   @override
   Widget build(BuildContext context) {
@@ -30,8 +29,8 @@ class _LoginPageState extends State<LoginPage> {
             height: 430,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Color(0xFF5C955D),
-              borderRadius: BorderRadius.only(
+              color: const Color(0xFF5C955D),
+              borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(30.0),
                 bottomRight: Radius.circular(30.0),
               ),
@@ -42,9 +41,10 @@ class _LoginPageState extends State<LoginPage> {
             left: 20,
             child: IconButton(
               onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => HomePage()));
+                Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (context) => HomePage()));
               },
-              icon: Icon(Icons.arrow_back),
+              icon: const Icon(Icons.arrow_back),
             ),
           ),
           Positioned(
@@ -64,7 +64,7 @@ class _LoginPageState extends State<LoginPage> {
             top: 130,
             left: 27,
             child: Text(
-              "Log In",
+              'Log In',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -76,7 +76,7 @@ class _LoginPageState extends State<LoginPage> {
             top: 160,
             left: 27,
             child: Text(
-              "Please enter your login information",
+              'Please enter your login information',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white,
@@ -85,13 +85,13 @@ class _LoginPageState extends State<LoginPage> {
           ),
           Center(
             child: Container(
-              margin: EdgeInsets.only(top: 200, left: 27, right: 27),
+              margin: const EdgeInsets.only(top: 200, left: 27, right: 27),
               width: 300,
               height: 330,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.all(
-                  Radius.circular(20),
+                  const Radius.circular(20),
                 ),
               ),
               child: Form(
@@ -99,11 +99,11 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    SizedBox(height: 30),
+                    const SizedBox(height: 30),
                     Container(
                       width: 250,
                       height: 50,
-                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: Colors.grey,
@@ -112,24 +112,25 @@ class _LoginPageState extends State<LoginPage> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: TextFormField(
+                        controller: loginController.emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           hintText: 'Email',
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 15),
-                          suffixIcon: Icon(Icons.email_outlined),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                          suffixIcon: const Icon(Icons.email_outlined),
                         ),
                         validator: (value) {
                           if (value?.isEmpty ?? true) {
                             return 'Email is required';
                           } else if (!value!.contains('@')) {
-                            return 'Invalid email address , should contain( @ )';
+                            return 'Invalid email address, should contain (@)';
                           }
                           return null;
                         },
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Container(
                       width: 250,
                       height: 50,
@@ -142,6 +143,7 @@ class _LoginPageState extends State<LoginPage> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: TextFormField(
+                        controller: loginController.passwordController,
                         obscureText: !_isPasswordVisible,
                         decoration: InputDecoration(
                           hintText: 'Password',
@@ -168,52 +170,41 @@ class _LoginPageState extends State<LoginPage> {
                           }
                           return null;
                         },
-                        style: TextStyle(
-                          color: Colors.black,
-                        ),
-                        cursorColor: Colors.black,
-                        //autovalidateMode: AutovalidateMode.onUserInteraction,
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Container(
                       width: 250,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: Color(0xFF5C955D),
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
-                        border: Border.all(
-                          color: Colors.green,
-                          width: 2,
-                        ),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: OutlinedButton(
-                        onPressed: () => loginController.loginWithEmail(),
-                        // {
-                        //
-                        //   if (_formKey.currentState?.validate() ?? false) {
-                        //     // Form is valid, perform login
-                        //     Navigator.of(context).pushReplacementNamed("bottomBar");
-                        //
-                        //   }
-                        // },
-                        style: OutlinedButton.styleFrom(
-                          primary: Color(0xFF5C955D),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                        onPressed: () {
+                          is_login.value = true;
+                          loginController.loginWithEmail();
+                        },
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all<Color>(
+                            const Color(0xFF5C955D),
+                          ),
+                          shape: MaterialStateProperty.all<OutlinedBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                         ),
-                        child: Text(
-                          "Log In",
+                        child: const Text(
+                          'Log In',
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                         ),
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 10),
                     GestureDetector(
                       onTap: () {
                         Navigator.of(context).pushReplacementNamed('ForgetPassword');
@@ -245,11 +236,9 @@ class _LoginPageState extends State<LoginPage> {
                     Text("Don't have an account?"),
                     SizedBox(width: 5),
                     GestureDetector(
-                      onTap: () => registerController.registerWithEmail(),
-
-                      // {
-                      //   Navigator.of(context).pushReplacementNamed('SignUp');
-                      // },
+                      onTap: (){
+                        Get.to(RegisterPage());
+                      },
                       child: Text(
                         "Register",
                         style: TextStyle(
