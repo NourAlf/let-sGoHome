@@ -1,7 +1,11 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
+import 'package:letsgohome/controller/login_controller.dart';
 import 'package:letsgohome/screens/homepage.dart';
-import 'package:letsgohome/screens/login_page.dart';
+
 import 'package:get/get.dart';
+import '../controller/login_controller.dart';
 
 import '../controller/registration_controller.dart';
 
@@ -17,24 +21,54 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   RegistrationController registerController = Get.put(RegistrationController());
+  LoginController loginController = Get.put(LoginController());
+var islogin = false.obs;
 
   final _formKey = GlobalKey<FormState>();
-  final _fullNameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-
-  final _phoneController = TextEditingController();
-
-
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+  String _passwordError = '';
+  String _confirmPasswordError = '';
 
   @override
   void dispose() {
-    _fullNameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _phoneController.dispose();
+    registerController.passwordController.dispose();
+    registerController.confirmPasswordController.dispose();
     super.dispose();
   }
+
+  bool _isPasswordValid(String password) {
+    // Password validation rules
+    if (password.isEmpty) {
+      setState(() {
+        _passwordError = 'Please enter a password';
+      });
+      return false;
+    } else if (password.length < 8) {
+      setState(() {
+        _passwordError = 'Password must be at least 8 characters long';
+      });
+      return false;
+    }
+    setState(() {
+      _passwordError = '';
+    });
+    return true;
+  }
+  bool _doPasswordsMatch(String password, String confirmPassword) {
+    if (password != confirmPassword) {
+      _confirmPasswordError = 'Passwords do not match';
+      return false;
+    }
+    _confirmPasswordError = '';
+    return true;
+  }
+
+
+
+
+
+
 
   // void _register() {
   //   if (_formKey.currentState!.validate()) {
@@ -124,7 +158,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   padding: const EdgeInsets.all(20),
                   children: [
                     TextFormField(
-                      controller: _fullNameController,
+                      controller: registerController.fullNameController,
                       keyboardType: TextInputType.text,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(
@@ -142,7 +176,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
-                      controller: _emailController,
+                      controller: registerController.emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(
@@ -162,7 +196,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
-                      controller: _phoneController,
+                      controller: registerController.phoneController,
                       keyboardType: TextInputType.phone,
                       
                       decoration: const InputDecoration(
@@ -183,27 +217,81 @@ class _RegisterPageState extends State<RegisterPage> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 20),
+
+                    SizedBox(height:20 ,),
                     TextFormField(
-                      controller: _passwordController,
-                      keyboardType: TextInputType.visiblePassword,
-                      obscureText: true,
-                      decoration: const InputDecoration(
+
+
+                      controller: registerController.passwordController,
+                      obscureText: _isPasswordVisible,
+
+                      onChanged: (value) {
+                        _isPasswordValid(value);
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'New Password',
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(18))
                         ),
-                        hintText: 'Password',
-                        prefixIcon: Icon(Icons.lock),
+                        hintStyle: TextStyle(color: Colors.grey),
+                        prefixIcon: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordVisible = !_isPasswordVisible;
+                            });
+                          },
+                          icon: Icon(
+                            _isPasswordVisible
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.grey,
+                          ),
+                        ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
-                        } else if (value.length < 8) {
-                          return 'Password should be at least 8 characters';
-                        }
-                        return null;
-                      },
                     ),
+                    if (_passwordError.isNotEmpty)
+                      Container(
+                        margin: EdgeInsets.only(left: 30),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _passwordError,
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    SizedBox(height: 20,),
+                    TextFormField(
+                      controller: registerController.confirmPasswordController,
+                      obscureText: !_isConfirmPasswordVisible,
+                      onChanged: (value) {
+                        _doPasswordsMatch(registerController.passwordController.text, value);
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Confirm Password',
+                        hintStyle: TextStyle(color: Colors.grey),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(18))
+                        ),
+                        prefixIcon: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                            });
+                          },
+                          child: Icon(
+                            _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_confirmPasswordError.isNotEmpty)
+                      Container(
+                        margin: EdgeInsets.only(left: 30),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _confirmPasswordError,
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
                     const SizedBox(height: 30),
                     Container(
                       width: 250,
@@ -216,11 +304,15 @@ class _RegisterPageState extends State<RegisterPage> {
                         style: ButtonStyle(
                           
                           backgroundColor: MaterialStateProperty.all<Color>(
-                              Color(0xFF5C955D)),
-                        fixedSize: MaterialStateProperty.all(Size(250, 50))),
-                         onPressed: () => registerController.registerWithEmail(),
+                              Color(0xFF5C955D)),),
+                         onPressed: () {
+                          islogin.value = false;
+                          registerController.registerWithEmail();
+                         }
+                        ,
                         child: const Text('Register'),
                       ),
+
                     ),
                   ],
                 ),
