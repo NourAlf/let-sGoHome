@@ -1,7 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'package:letsgohome/screens/newstudent_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ScanQR extends StatefulWidget {
   const ScanQR({Key? key}) : super(key: key);
@@ -15,61 +19,107 @@ class _ScanQRState extends State<ScanQR> {
   bool _isScanning = false;
 
   Future<void> scanCode() async {
-    String qr;
     try {
-      qr = await FlutterBarcodeScanner.scanBarcode(
+      String qr = await FlutterBarcodeScanner.scanBarcode(
         "#ff6666",
-        "cancel",
+        "Cancel",
         true,
         ScanMode.QR,
       );
-    } on PlatformException {
-      qr = "Failed to scan the QR code";
-    }
-    setState(() {
-      _scanResult = qr;
-      _isScanning = false;
-    });
 
-    if (_scanResult.isNotEmpty) {
-      showUrlAlertDialog();
+      if (qr.isEmpty) {
+        // User canceled the scan
+        return;
+      }
+
+      setState(() {
+        _scanResult = qr;
+        _isScanning = false;
+      });
+
+      checkStudentCode(_scanResult);
+    } on PlatformException catch (e) {
+      // Handle platform exceptions (e.g., permission denied)
+      print("Platform Exception: ${e.message}");
     }
   }
 
-  void showUrlAlertDialog() {
+  Future<void> checkStudentCode(String qr) async {
+    try {
+      final String apiUrl = 'https://present-ksa.com/api/getinfo/566314';
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('token');
+
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      print('respoooonse ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        final result = responseData['result'];
+
+        if (result == true) {
+          final studentCode = responseData['student_code'];
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Student Found'),
+                content: Text('Student Code: $studentCode'),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context)=> AddStudentPage()));
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        } else {
+          final message = responseData['result'];
+          showErrorDialog(message );
+        }
+      } else if (response.statusCode == 500) {
+        final responseData = json.decode(response.body);
+        final message = responseData['result'];
+        showErrorDialog(message);
+      } else {
+        showErrorDialog('Unknown error occurred');
+      }
+    } on SocketException catch (e) {
+      print("Socket Exception: ${e.message}");
+      showErrorDialog('No internet connection');
+    } catch (e) {
+      // Handle other exceptions
+      print("Exception: $e");
+    }
+  }
+
+  void showErrorDialog(String message) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Open URL'),
-          content: Text('Do you want to open the scanned URL in Google?'),
+          title: const Text('Error'),
+          content: Text(message),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                openUrlInGoogle();
-              },
-              child: const Text('Open'),
+              child: const Text('OK'),
             ),
           ],
         );
       },
     );
-  }
-
-  void openUrlInGoogle() async {
-    final url = _scanResult;
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      throw 'Could not launch $url';
-    }
   }
 
   @override
@@ -82,16 +132,16 @@ class _ScanQRState extends State<ScanQR> {
               Container(
                 height: 300,
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5C955D),
-                  borderRadius: const BorderRadius.only(
+                decoration: const BoxDecoration(
+                  color: Color(0xFF5C955D),
+                  borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(30.0),
                     bottomRight: Radius.circular(30.0),
                   ),
                 ),
               ),
               Positioned(
-                top: 20,
+                top: 80,
                 left: 20,
                 child: GestureDetector(
                   onTap: () {
@@ -104,7 +154,7 @@ class _ScanQRState extends State<ScanQR> {
                   },
                   child: const Icon(
                     Icons.qr_code,
-                    size: 32,
+                    size: 45,
                   ),
                 ),
               ),
@@ -121,10 +171,10 @@ class _ScanQRState extends State<ScanQR> {
                   // Add your content for the small container here
                 ),
               ),
-              Positioned(
+              const Positioned(
                 top: 130,
                 left: 27,
-                child: const Text(
+                child: Text(
                   "Scan the QR code",
                   style: TextStyle(
                     fontSize: 18,
@@ -133,10 +183,10 @@ class _ScanQRState extends State<ScanQR> {
                   ),
                 ),
               ),
-              Positioned(
+              const Positioned(
                 top: 170,
                 left: 27,
-                child: const Text(
+                child: Text(
                   "You can add a student after scanning the QR \n code on the fences ",
                   style: TextStyle(
                     fontSize: 14,
@@ -151,9 +201,9 @@ class _ScanQRState extends State<ScanQR> {
             child: Container(
               height: 200,
               width: 200,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.all(const Radius.circular(24)),
+                borderRadius: BorderRadius.all(Radius.circular(24)),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
